@@ -45,6 +45,7 @@ public:
   void powerUp();
   void update();
   void powerDown();
+  void displayPartial(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
 protected:
   uint8_t writeRAMCommand(uint8_t index);

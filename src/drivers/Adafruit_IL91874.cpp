@@ -252,3 +252,71 @@ void Adafruit_IL91874::setRAMAddress(uint16_t x, uint16_t y) {
   (void)x;
   (void)y;
 }
+
+void Adafruit_IL91874::displayPartial(uint16_t x, uint16_t y, uint16_t w,
+                                      uint16_t h) {
+  const int16_t eight_mask = 0xFFF8; // last three bits unset
+  int16_t coords[4];
+  coords[0] = (int16_t)y & eight_mask;
+  coords[1] = width() - (int16_t)x - (int16_t)w;
+  coords[2] = -(-((int16_t)y + (int16_t)h) & eight_mask) - coords[0]; // rounds up!
+  coords[3] = (int16_t)w;
+
+  // Serial.println("Partial update!");
+
+  // backup & change init to the partial code
+  const uint8_t *init_code_backup = _epd_init_code;
+  const uint8_t *lut_code_backup = _epd_lut_code;
+  _epd_init_code = _epd_partial_init_code;
+  _epd_lut_code = _epd_partial_lut_code;
+
+  // perform standard power up
+  powerUp();
+
+  // Set X & Y ram counters
+  setRAMAddress(0, 0);
+
+  if (use_sram) {
+#ifdef EPD_DEBUG
+    Serial.println("  Write SRAM buff to EPD");
+#endif
+    writeSRAMFramebufferToEPD(buffer1_addr, buffer1_size, 0);
+  } else {
+#ifdef EPD_DEBUG
+    Serial.println("  Write RAM buff to EPD");
+#endif
+    writeRAMFramebufferToEPD(buffer1, buffer1_size, 0);
+  }
+
+  if (buffer2_size != 0) {
+    // oh there's another buffer eh?
+    delay(2);
+
+    // Set X & Y ram counters
+    setRAMAddress(0, 0);
+
+    if (use_sram) {
+      writeSRAMFramebufferToEPD(buffer2_addr, buffer2_size, 1);
+    } else {
+      writeRAMFramebufferToEPD(buffer2, buffer2_size, 1);
+    }
+  }
+
+  // actually send the partial refresh command
+  EPD_command(IL91874_PDRF, true);
+  for (size_t i = 0; i < 4; ++i) {
+    EPD_data((coords[i] >> 8) & 0x01);
+    EPD_data(coords[i] & 0xFF);
+  }
+  delay(100);
+  busy_wait();
+
+#ifdef EPD_DEBUG
+  Serial.println("  Powering Down");
+#endif
+
+  powerDown();
+  // change init back
+  _epd_lut_code = lut_code_backup;
+  _epd_init_code = init_code_backup;
+}
