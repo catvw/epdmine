@@ -173,7 +173,8 @@ public:
   void powerUp();
   void update();
   void powerDown();
-  void displayPartial(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+  void displayPartial(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                      bool fast = true);
 
 protected:
   uint8_t writeRAMCommand(uint8_t index);

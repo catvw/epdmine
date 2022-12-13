@@ -207,7 +207,7 @@ void Adafruit_IL91874::setRAMAddress(uint16_t x, uint16_t y) {
 }
 
 void Adafruit_IL91874::displayPartial(uint16_t x, uint16_t y, uint16_t w,
-                                      uint16_t h) {
+                                      uint16_t h, bool fast) {
   const int16_t eight_mask = 0xFFF8; // last three bits unset
   int16_t coords[4];
   coords[0] = (int16_t)y & eight_mask;
@@ -217,11 +217,13 @@ void Adafruit_IL91874::displayPartial(uint16_t x, uint16_t y, uint16_t w,
 
   // Serial.println("Partial update!");
 
-  // backup & change init to the partial code
   const uint8_t *init_code_backup = _epd_init_code;
   const uint8_t *lut_code_backup = _epd_lut_code;
-  _epd_init_code = _epd_partial_init_code;
-  _epd_lut_code = _epd_partial_lut_code;
+  if (fast) {
+    // backup & change init to the partial code
+    _epd_init_code = _epd_partial_init_code;
+    _epd_lut_code = _epd_partial_lut_code;
+  }
 
   // perform standard power up
   powerUp();
